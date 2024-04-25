@@ -20,6 +20,14 @@ using Comfort.Common;
 
 using EFT.Hideout;
 
+using GClass3368 = Conditions;
+using GClass1249 = Quest;
+using GClass1922 = AbstractScheme;
+using ActionsReturnClass = InteractionStates;
+using ActionsTypesClass = Action1;
+using Newtonsoft.Json;
+
+
 namespace MoreCheckmarks
 {
     public struct NeededStruct
@@ -107,11 +115,43 @@ namespace MoreCheckmarks
             DoPatching();
         }
 
+        private static string GetBackendUrl()
+        {
+            string[] args = Environment.GetCommandLineArgs();
+            if (args == null)
+                return null;
+
+            var beUrl = string.Empty;
+
+            foreach (string arg in args)
+            {
+                if (arg.Contains("BackendUrl"))
+                {
+                    string json = arg.Replace("-config=", string.Empty);
+                    dynamic result = JsonConvert.DeserializeObject(json);
+                    if (result != null)
+                        beUrl = result.BackendUrl;
+                    break;
+                }
+            }
+
+            return beUrl;
+        }
+
+        public static string FixPath(string path)
+        {
+            string backendUrl = GetBackendUrl();
+            bool hasTrailing = backendUrl.EndsWith(@"/");
+            if (hasTrailing)
+                path = path.Substring(1);
+            return path;
+        }
+
         public void LoadData()
         {
             LogInfo("Loading data");
             LogInfo("\tQuests");
-            JArray questData = JArray.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/quests"));
+            JArray questData = JArray.Parse(RequestHandler.GetJson(FixPath("/MoreCheckmarksRoutes/quests")));
             questDataStartByItemTemplateID.Clear();
             neededStartItemsByQuest.Clear();
             questDataCompleteByItemTemplateID.Clear();
@@ -600,11 +640,11 @@ namespace MoreCheckmarks
             string dollar = "5696686a4bdc2da3298b456a";
             if (itemData == null)
             {
-                itemData = JObject.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/items"));
+                itemData = JObject.Parse(RequestHandler.GetJson(FixPath("/MoreCheckmarksRoutes/items")));
             }
 
             LogInfo("\tAssorts");
-            JArray assortData = JArray.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/assorts"));
+            JArray assortData = JArray.Parse(RequestHandler.GetJson(FixPath("/MoreCheckmarksRoutes/assorts")));
             bartersByItemByTrader.Clear();
             for (int i=0; i < assortData.Count; ++i)
             {
@@ -639,7 +679,7 @@ namespace MoreCheckmarks
             }
 
             LogInfo("\tProductions");
-            JArray productionData = JArray.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/productions"));
+            JArray productionData = JArray.Parse(RequestHandler.GetJson(FixPath("/MoreCheckmarksRoutes/productions")));
             productionEndProductByID.Clear();
 
             for (int i = 0; i < productionData.Count; ++i)
